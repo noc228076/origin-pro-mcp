@@ -703,7 +703,8 @@ def page_delete(page_name: str) -> str:
 
 def main():
     """Run the Origin Pro MCP server."""
-    logger.info("Starting Origin Pro 2024 MCP Server...")
+    print("Origin Pro 2024 MCP Server started successfully.", file=sys.stderr)
+    print("Waiting for MCP client connection via stdio...", file=sys.stderr)
     mcp.run(transport="stdio")
 
 

@@ -16,50 +16,25 @@ def linear_fit(
     fix_intercept: bool = False,
     intercept_value: float = 0.0,
 ) -> dict[str, Any]:
-    """Perform linear regression on worksheet data.
+    """Perform linear regression on worksheet data."""
+    origin.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"page.active = {sheet_index + 1};")
 
-    Args:
-        book_name: Workbook short name.
-        sheet_index: Sheet index (0-based).
-        col_x: X column index (0-based).
-        col_y: Y column index (0-based).
-        fix_intercept: Whether to fix the intercept.
-        intercept_value: Fixed intercept value (if fix_intercept is True).
+    y_range = f"col({col_y + 1})"
+    x_range = f"col({col_x + 1})"
 
-    Returns:
-        dict with fit results (slope, intercept, R², etc.).
-    """
-    with origin.lock() as op:
-        wb = op.find_book("w", book_name)
-        if wb is None:
-            raise ValueError(f"Workbook '{book_name}' not found")
+    fix_str = f"fixint:=1 fix_intcpt:={intercept_value}" if fix_intercept else ""
+    origin.lt_exec(f"fitLR iy:={y_range} ix:={x_range} {fix_str};")
 
-        wks = wb[sheet_index]
-        sname = wks.lt_prop("page.name$") if hasattr(wks, "lt_prop") else book_name
-
-        # Activate the worksheet
-        op.lt_exec(f"win -a {book_name};")
-
-        # Build range strings
-        x_range = f"[{book_name}]{sheet_index + 1}!Col({col_x + 1})"
-        y_range = f"[{book_name}]{sheet_index + 1}!Col({col_y + 1})"
-
-        # Execute linear fit via LabTalk
-        fix_str = f"fixint:=1 fix_intcpt:={intercept_value}" if fix_intercept else ""
-        op.lt_exec(f"fitLR iy:={y_range} ix:={x_range} {fix_str};")
-
-        # Retrieve results from LabTalk system variables
-        results = {
-            "type": "linear_fit",
-            "slope": op.lt_float("fitLR.b"),
-            "intercept": op.lt_float("fitLR.a"),
-            "r_squared": op.lt_float("fitLR.COD"),
-            "pearson_r": op.lt_float("fitLR.r"),
-            "std_error_slope": op.lt_float("fitLR.bErr"),
-            "std_error_intercept": op.lt_float("fitLR.aErr"),
-        }
-
-        return results
+    return {
+        "type": "linear_fit",
+        "slope": origin.lt_float("fitLR.b"),
+        "intercept": origin.lt_float("fitLR.a"),
+        "r_squared": origin.lt_float("fitLR.COD"),
+        "pearson_r": origin.lt_float("fitLR.r"),
+        "std_error_slope": origin.lt_float("fitLR.bErr"),
+        "std_error_intercept": origin.lt_float("fitLR.aErr"),
+    }
 
 
 def polynomial_fit(
@@ -69,44 +44,31 @@ def polynomial_fit(
     col_y: int = 1,
     order: int = 2,
 ) -> dict[str, Any]:
-    """Perform polynomial fit on worksheet data.
+    """Perform polynomial fit on worksheet data."""
+    origin.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"page.active = {sheet_index + 1};")
 
-    Args:
-        book_name: Workbook short name.
-        sheet_index: Sheet index (0-based).
-        col_x: X column index.
-        col_y: Y column index.
-        order: Polynomial order (2=quadratic, 3=cubic, etc.).
+    y_range = f"col({col_y + 1})"
+    x_range = f"col({col_x + 1})"
 
-    Returns:
-        dict with fit results.
-    """
-    with origin.lock() as op:
-        op.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"fitPoly iy:={y_range} ix:={x_range} polyorder:={order};")
 
-        y_range = f"[{book_name}]{sheet_index + 1}!Col({col_y + 1})"
-        x_range = f"[{book_name}]{sheet_index + 1}!Col({col_x + 1})"
+    results = {
+        "type": "polynomial_fit",
+        "order": order,
+        "r_squared": origin.lt_float("fitPoly.COD"),
+    }
 
-        op.lt_exec(f"fitPoly iy:={y_range} ix:={x_range} polyorder:={order};")
+    coefficients = []
+    for i in range(order + 1):
+        try:
+            coeff = origin.lt_float(f"fitPoly.P{i}")
+            coefficients.append(coeff)
+        except Exception:
+            break
+    results["coefficients"] = coefficients
 
-        results = {
-            "type": "polynomial_fit",
-            "order": order,
-            "r_squared": op.lt_float("fitPoly.COD"),
-            "adj_r_squared": op.lt_float("fitPoly.AdjCOD"),
-        }
-
-        # Retrieve coefficients
-        coefficients = []
-        for i in range(order + 1):
-            try:
-                coeff = op.lt_float(f"fitPoly.P{i}")
-                coefficients.append(coeff)
-            except Exception:
-                break
-        results["coefficients"] = coefficients
-
-        return results
+    return results
 
 
 def nonlinear_fit(
@@ -117,53 +79,37 @@ def nonlinear_fit(
     function: str = "Gauss",
     max_iter: int = 200,
 ) -> dict[str, Any]:
-    """Perform nonlinear curve fitting.
+    """Perform nonlinear curve fitting."""
+    origin.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"page.active = {sheet_index + 1};")
 
-    Args:
-        book_name: Workbook short name.
-        sheet_index: Sheet index (0-based).
-        col_x: X column index.
-        col_y: Y column index.
-        function: Fit function name. Common options:
-                   Gauss, Lorentz, Voigt, ExpDec1, ExpDec2, ExpGrow1,
-                   Boltzmann, Logistic, Sine, Power, Log, Polynomial.
-        max_iter: Maximum number of iterations.
+    y_range = f"col({col_y + 1})"
+    x_range = f"col({col_x + 1})"
 
-    Returns:
-        dict with fit results.
-    """
-    with origin.lock() as op:
-        op.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"nlbegin iy:={y_range} ix:={x_range} func:={function} iter:={max_iter};")
+    origin.lt_exec("nlfit;")
 
-        y_range = f"[{book_name}]{sheet_index + 1}!Col({col_y + 1})"
-        x_range = f"[{book_name}]{sheet_index + 1}!Col({col_x + 1})"
+    results = {
+        "type": "nonlinear_fit",
+        "function": function,
+        "chi_squared_reduced": origin.lt_float("nlf.ChiSqr"),
+        "r_squared": origin.lt_float("nlf.COD"),
+        "iterations": origin.lt_int("nlf.NumIter"),
+    }
 
-        # Use nlbegin/nlfit/nlend workflow
-        op.lt_exec(f'nlbegin iy:={y_range} ix:={x_range} func:={function} iter:={max_iter};')
-        op.lt_exec("nlfit;")
+    params = {}
+    common_params = ["y0", "xc", "w", "A", "a", "b", "c", "t1", "t2"]
+    for p in common_params:
+        try:
+            val = origin.lt_float(f"nlf.{p}")
+            params[p] = val
+        except Exception:
+            continue
+    results["parameters"] = params
 
-        results = {
-            "type": "nonlinear_fit",
-            "function": function,
-            "chi_squared_reduced": op.lt_float("nlf.ChiSqr"),
-            "r_squared": op.lt_float("nlf.COD"),
-            "iterations": op.lt_int("nlf.NumIter"),
-        }
+    origin.lt_exec("nlend;")
 
-        # Try to get parameters (function-dependent)
-        params = {}
-        common_params = ["y0", "xc", "w", "A", "a", "b", "c", "t1", "t2"]
-        for p in common_params:
-            try:
-                val = op.lt_float(f"nlf.{p}")
-                params[p] = val
-            except Exception:
-                continue
-        results["parameters"] = params
-
-        op.lt_exec("nlend;")
-
-        return results
+    return results
 
 
 def descriptive_statistics(
@@ -171,37 +117,26 @@ def descriptive_statistics(
     sheet_index: int = 0,
     col_index: int = 0,
 ) -> dict[str, Any]:
-    """Calculate descriptive statistics for a column.
+    """Calculate descriptive statistics for a column."""
+    origin.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"page.active = {sheet_index + 1};")
 
-    Args:
-        book_name: Workbook short name.
-        sheet_index: Sheet index (0-based).
-        col_index: Column index (0-based).
+    data_range = f"col({col_index + 1})"
+    origin.lt_exec(f"stats ix:={data_range};")
 
-    Returns:
-        dict with statistical measures.
-    """
-    with origin.lock() as op:
-        op.lt_exec(f"win -a {book_name};")
-
-        data_range = f"[{book_name}]{sheet_index + 1}!Col({col_index + 1})"
-        op.lt_exec(f"stats ix:={data_range};")
-
-        results = {
-            "type": "descriptive_statistics",
-            "n": op.lt_int("stats.N"),
-            "mean": op.lt_float("stats.Mean"),
-            "std_dev": op.lt_float("stats.SD"),
-            "min": op.lt_float("stats.Min"),
-            "max": op.lt_float("stats.Max"),
-            "median": op.lt_float("stats.Median"),
-            "sum": op.lt_float("stats.Sum"),
-            "variance": op.lt_float("stats.Var"),
-            "skewness": op.lt_float("stats.Skew"),
-            "kurtosis": op.lt_float("stats.Kurt"),
-        }
-
-        return results
+    return {
+        "type": "descriptive_statistics",
+        "n": origin.lt_int("stats.N"),
+        "mean": origin.lt_float("stats.Mean"),
+        "std_dev": origin.lt_float("stats.SD"),
+        "min": origin.lt_float("stats.Min"),
+        "max": origin.lt_float("stats.Max"),
+        "median": origin.lt_float("stats.Median"),
+        "sum": origin.lt_float("stats.Sum"),
+        "variance": origin.lt_float("stats.Var"),
+        "skewness": origin.lt_float("stats.Skew"),
+        "kurtosis": origin.lt_float("stats.Kurt"),
+    }
 
 
 def fft(
@@ -210,43 +145,24 @@ def fft(
     col_index: int = 0,
     output_type: str = "magnitude",
 ) -> dict[str, Any]:
-    """Perform Fast Fourier Transform on a data column.
+    """Perform Fast Fourier Transform on a data column."""
+    origin.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"page.active = {sheet_index + 1};")
 
-    Args:
-        book_name: Workbook short name.
-        sheet_index: Sheet index (0-based).
-        col_index: Column index (0-based).
-        output_type: Output type - "magnitude", "phase", "complex", "power".
+    data_range = f"col({col_index + 1})"
+    spectrum_map = {"magnitude": 0, "phase": 1, "complex": 2, "power": 3}
+    spec_type = spectrum_map.get(output_type.lower(), 0)
 
-    Returns:
-        dict with FFT result location.
-    """
-    with origin.lock() as op:
-        op.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"fft1 ix:={data_range} spectrum:={spec_type};")
 
-        data_range = f"[{book_name}]{sheet_index + 1}!Col({col_index + 1})"
+    result_book = origin.get_lt_str("page.name$")
 
-        # Map output type
-        spectrum_map = {
-            "magnitude": 0,
-            "phase": 1,
-            "complex": 2,
-            "power": 3,
-        }
-        spec_type = spectrum_map.get(output_type.lower(), 0)
-
-        op.lt_exec(
-            f"fft1 ix:={data_range} spectrum:={spec_type};"
-        )
-
-        result_book = op.get_lt_str("page.name$")
-
-        return {
-            "type": "fft",
-            "source_book": book_name,
-            "result_book": result_book,
-            "output_type": output_type,
-        }
+    return {
+        "type": "fft",
+        "source_book": book_name,
+        "result_book": result_book,
+        "output_type": output_type,
+    }
 
 
 def peak_find(
@@ -257,47 +173,29 @@ def peak_find(
     method: str = "local_max",
     n_peaks: int = 0,
 ) -> dict[str, Any]:
-    """Find peaks in data.
+    """Find peaks in data."""
+    origin.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"page.active = {sheet_index + 1};")
 
-    Args:
-        book_name: Workbook short name.
-        sheet_index: Sheet index (0-based).
-        col_x: X column index.
-        col_y: Y column index.
-        method: Peak finding method - "local_max", "window", "first_derivative".
-        n_peaks: Maximum number of peaks to find (0 = all).
+    y_range = f"col({col_y + 1})"
+    method_map = {"local_max": 0, "window": 1, "first_derivative": 2}
+    method_code = method_map.get(method.lower(), 0)
 
-    Returns:
-        dict with peak positions and info.
-    """
-    with origin.lock() as op:
-        op.lt_exec(f"win -a {book_name};")
+    cmd = f"pkFind iy:={y_range} method:={method_code}"
+    if n_peaks > 0:
+        cmd += f" npeaks:={n_peaks}"
+    cmd += ";"
 
-        y_range = f"[{book_name}]{sheet_index + 1}!Col({col_y + 1})"
+    origin.lt_exec(cmd)
 
-        method_map = {
-            "local_max": 0,
-            "window": 1,
-            "first_derivative": 2,
-        }
-        method_code = method_map.get(method.lower(), 0)
+    n_found = origin.lt_int("pkFind.nPeaks")
 
-        cmd = f"pkFind iy:={y_range} method:={method_code}"
-        if n_peaks > 0:
-            cmd += f" npeaks:={n_peaks}"
-        cmd += ";"
-
-        op.lt_exec(cmd)
-
-        # Retrieve number of peaks found
-        n_found = op.lt_int("pkFind.nPeaks")
-
-        return {
-            "type": "peak_find",
-            "method": method,
-            "peaks_found": n_found,
-            "source_book": book_name,
-        }
+    return {
+        "type": "peak_find",
+        "method": method,
+        "peaks_found": n_found,
+        "source_book": book_name,
+    }
 
 
 def smooth_data(
@@ -308,46 +206,30 @@ def smooth_data(
     points: int = 5,
     polynomial_order: int = 2,
 ) -> dict[str, Any]:
-    """Smooth data in a column.
+    """Smooth data in a column."""
+    origin.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"page.active = {sheet_index + 1};")
 
-    Args:
-        book_name: Workbook short name.
-        sheet_index: Sheet index (0-based).
-        col_y: Y column index.
-        method: Smoothing method - "adjacent_averaging", "savitzky_golay",
-                "percentile_filter", "fft_filter".
-        points: Number of smoothing points.
-        polynomial_order: Polynomial order (for Savitzky-Golay only).
+    y_range = f"col({col_y + 1})"
+    method_map = {
+        "adjacent_averaging": 1, "savitzky_golay": 2,
+        "percentile_filter": 3, "fft_filter": 4,
+    }
+    method_code = method_map.get(method.lower(), 2)
 
-    Returns:
-        dict with smoothing result info.
-    """
-    with origin.lock() as op:
-        op.lt_exec(f"win -a {book_name};")
+    cmd = f"smooth iy:={y_range} method:={method_code} npts:={points}"
+    if method_code == 2:
+        cmd += f" polyorder:={polynomial_order}"
+    cmd += ";"
 
-        y_range = f"[{book_name}]{sheet_index + 1}!Col({col_y + 1})"
+    origin.lt_exec(cmd)
 
-        method_map = {
-            "adjacent_averaging": 1,
-            "savitzky_golay": 2,
-            "percentile_filter": 3,
-            "fft_filter": 4,
-        }
-        method_code = method_map.get(method.lower(), 2)
-
-        cmd = f"smooth iy:={y_range} method:={method_code} npts:={points}"
-        if method_code == 2:
-            cmd += f" polyorder:={polynomial_order}"
-        cmd += ";"
-
-        op.lt_exec(cmd)
-
-        return {
-            "type": "smooth",
-            "method": method,
-            "points": points,
-            "source_book": book_name,
-        }
+    return {
+        "type": "smooth",
+        "method": method,
+        "points": points,
+        "source_book": book_name,
+    }
 
 
 def baseline_correction(
@@ -355,27 +237,18 @@ def baseline_correction(
     sheet_index: int = 0,
     col_y: int = 1,
 ) -> dict[str, Any]:
-    """Perform baseline correction on data.
+    """Perform baseline correction on data."""
+    origin.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"page.active = {sheet_index + 1};")
 
-    Args:
-        book_name: Workbook short name.
-        sheet_index: Sheet index (0-based).
-        col_y: Y column index.
+    y_range = f"col({col_y + 1})"
+    origin.lt_exec(f"blauto iy:={y_range};")
 
-    Returns:
-        dict with result info.
-    """
-    with origin.lock() as op:
-        op.lt_exec(f"win -a {book_name};")
-
-        y_range = f"[{book_name}]{sheet_index + 1}!Col({col_y + 1})"
-        op.lt_exec(f"blauto iy:={y_range};")
-
-        return {
-            "type": "baseline_correction",
-            "source_book": book_name,
-            "col_y": col_y,
-        }
+    return {
+        "type": "baseline_correction",
+        "source_book": book_name,
+        "col_y": col_y,
+    }
 
 
 def interpolate(
@@ -386,42 +259,24 @@ def interpolate(
     method: str = "linear",
     n_points: int = 100,
 ) -> dict[str, Any]:
-    """Interpolate/extrapolate data.
+    """Interpolate data."""
+    origin.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(f"page.active = {sheet_index + 1};")
 
-    Args:
-        book_name: Workbook short name.
-        sheet_index: Sheet index (0-based).
-        col_x: X column index.
-        col_y: Y column index.
-        method: Interpolation method - "linear", "cubic_spline", "bspline", "akima".
-        n_points: Number of output points.
+    y_range = f"col({col_y + 1})"
+    x_range = f"col({col_x + 1})"
+    method_map = {"linear": 0, "cubic_spline": 1, "bspline": 2, "akima": 3}
+    method_code = method_map.get(method.lower(), 0)
 
-    Returns:
-        dict with interpolation result info.
-    """
-    with origin.lock() as op:
-        op.lt_exec(f"win -a {book_name};")
+    origin.lt_exec(
+        f"interp1 iy:={y_range} ix:={x_range} method:={method_code} npts:={n_points};"
+    )
 
-        y_range = f"[{book_name}]{sheet_index + 1}!Col({col_y + 1})"
-        x_range = f"[{book_name}]{sheet_index + 1}!Col({col_x + 1})"
+    result_book = origin.get_lt_str("page.name$")
 
-        method_map = {
-            "linear": 0,
-            "cubic_spline": 1,
-            "bspline": 2,
-            "akima": 3,
-        }
-        method_code = method_map.get(method.lower(), 0)
-
-        op.lt_exec(
-            f"interp1 iy:={y_range} ix:={x_range} method:={method_code} npts:={n_points};"
-        )
-
-        result_book = op.get_lt_str("page.name$")
-
-        return {
-            "type": "interpolation",
-            "method": method,
-            "n_points": n_points,
-            "result_book": result_book,
-        }
+    return {
+        "type": "interpolation",
+        "method": method,
+        "n_points": n_points,
+        "result_book": result_book,
+    }

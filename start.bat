@@ -6,9 +6,9 @@ echo   Origin Pro 2024 MCP Server
 echo ========================================
 echo.
 
-where uvx >nul 2>&1
+where uv >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [INFO] uvx not found, trying pip...
+    echo [INFO] uv not found, trying pip...
     where python >nul 2>&1
     if %errorlevel% neq 0 (
         echo [ERROR] Python not found. Please install Python 3.10+ and uv.
@@ -24,8 +24,8 @@ if %errorlevel% neq 0 (
     goto :done
 )
 
-echo [INFO] Starting MCP Server with uvx...
-uvx origin-pro-mcp
+echo [INFO] Starting MCP Server...
+uv run --directory "%~dp0." origin-pro-mcp
 goto :done
 
 :fail

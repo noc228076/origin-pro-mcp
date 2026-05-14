@@ -27,7 +27,7 @@ uv pip install -e .
 
 ```json
 {
-  "mcpServers": {
+  "origin-pro": {
     "origin-pro": {
       "command": "uv",
       "args": ["origin-pro-mcp"]

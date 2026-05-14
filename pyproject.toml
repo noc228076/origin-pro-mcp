@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "origin-pro-mcp"
+version = "0.1.0"
+description = "MCP Server for Origin Pro 2024 - enables AI agents to control OriginLab for data analysis and visualization"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "originpro>=1.1.0",
+    "pywin32>=306",
+]
+
+[project.scripts]
+origin-pro-mcp = "origin_pro_mcp.server:main"

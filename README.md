@@ -25,9 +25,37 @@ pip install -e .
 
 ## 配置 MCP 客户端
 
-### Claude Code / Cherry Studio
+### Claude Code
 
-在 MCP 配置文件中添加：
+在 MCP 配置文件（`.mcp.json`）中添加：
+
+```json
+{
+  "origin-pro": {
+    "command": "uv",
+    "args": [
+      "--directory", "/path/to/origin-pro-mcp",
+      "run", "origin-pro-mcp"
+    ]
+  }
+}
+```
+
+> 将 `/path/to/origin-pro-mcp` 替换为你实际的项目目录路径。
+
+使用 pip 安装后也可以直接指定命令：
+
+```json
+{
+  "origin-pro": {
+    "command": "origin-pro-mcp"
+  }
+}
+```
+
+### Cursor
+
+在 `.cursor/mcp.json` 中添加（Cursor 使用 `mcpServers` 包裹格式）：
 
 ```json
 {
@@ -43,23 +71,12 @@ pip install -e .
 }
 ```
 
-> 将 `/path/to/origin-pro-mcp` 替换为你实际的项目目录路径。
+### Cherry Studio
 
-### 使用 pip 安装后直接运行
+在 Cherry Studio 设置中添加 MCP 服务器，传输类型选择 **stdio**，命令填写：
 
-```json
-{
-  "mcpServers": {
-    "origin-pro": {
-      "command": "origin-pro-mcp"
-    }
-  }
-}
-```
-
-### Cursor
-
-在 `.cursor/mcp.json` 中添加同样的配置。
+- 命令：`uv`
+- 参数：`--directory /path/to/origin-pro-mcp run origin-pro-mcp`
 
 ## 提供的工具（共 30 个）
 

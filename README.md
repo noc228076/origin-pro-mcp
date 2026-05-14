@@ -7,20 +7,18 @@
 - **Windows 系统**（Origin Pro 仅支持 Windows）
 - **Origin Pro 2024**（已安装并激活许可证）
 - **Python >= 3.10**
-- **uv**（推荐）或 pip
+- **uv**（推荐）或 npm
 
 ## 安装
 
+无需手动安装，MCP 客户端会通过 `uvx` 自动拉取并运行。
+
+如需本地开发：
+
 ```bash
-# 克隆项目
 git clone https://github.com/noc228076/origin-pro-mcp.git
 cd origin-pro-mcp
-
-# 使用 uv（推荐）
 uv pip install -e .
-
-# 或使用 pip
-pip install -e .
 ```
 
 ## 配置 MCP 客户端
@@ -32,23 +30,9 @@ pip install -e .
 ```json
 {
   "origin-pro": {
-    "command": "uv",
-    "args": [
-      "--directory", "/path/to/origin-pro-mcp",
-      "run", "origin-pro-mcp"
-    ]
-  }
-}
-```
-
-> 将 `/path/to/origin-pro-mcp` 替换为你实际的项目目录路径。
-
-使用 pip 安装后也可以直接指定命令：
-
-```json
-{
-  "origin-pro": {
-    "command": "origin-pro-mcp"
+    "type": "stdio",
+    "command": "uvx",
+    "args": ["origin-pro-mcp"]
   }
 }
 ```
@@ -61,11 +45,9 @@ pip install -e .
 {
   "mcpServers": {
     "origin-pro": {
-      "command": "uv",
-      "args": [
-        "--directory", "/path/to/origin-pro-mcp",
-        "run", "origin-pro-mcp"
-      ]
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["origin-pro-mcp"]
     }
   }
 }
@@ -73,10 +55,24 @@ pip install -e .
 
 ### Cherry Studio
 
-在 Cherry Studio 设置中添加 MCP 服务器，传输类型选择 **stdio**，命令填写：
+在 Cherry Studio 设置中添加 MCP 服务器，传输类型选择 **stdio**：
 
-- 命令：`uv`
-- 参数：`--directory /path/to/origin-pro-mcp run origin-pro-mcp`
+- 命令：`uvx`
+- 参数：`origin-pro-mcp`
+
+### 从源码运行（本地开发）
+
+如果你 clone 了本仓库，也可以指定本地目录：
+
+```json
+{
+  "origin-pro": {
+    "type": "stdio",
+    "command": "uv",
+    "args": ["--directory", "/path/to/origin-pro-mcp", "run", "origin-pro-mcp"]
+  }
+}
+```
 
 ## 提供的工具（共 30 个）
 

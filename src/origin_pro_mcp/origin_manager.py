@@ -1,6 +1,7 @@
 """Origin Pro COM connection manager - thread-safe singleton for Origin automation."""
 
 import logging
+import sys
 import threading
 from contextlib import contextmanager
 
@@ -31,23 +32,42 @@ class OriginManager:
         self._op = None
 
     def connect(self) -> None:
-        """Connect to Origin Pro via the originpro package."""
+        """Connect to Origin Pro via COM.
+
+        Uses win32com directly first to ensure COM is properly initialized,
+        then imports originpro which wraps the same COM connection.
+        """
         with self._lock:
             if self._op is not None:
                 return
             try:
+                # Step 1: Initialize COM on this thread
+                import pythoncom
+                pythoncom.CoInitialize()
+
+                # Step 2: Connect to Origin via COM directly to verify it works
+                import win32com.client
+                app = win32com.client.Dispatch("Origin.ApplicationSI")
+                app.Visible = 1  # MAINWND_SHOW = 1
+                app.Execute("sec -poc 3.5")  # Wait for Origin C compilation
+                self._app = app
+
+                # Step 3: Now import originpro which will attach to the same instance
                 import originpro as op
                 self._op = op
-                # Make Origin visible so user can see what's happening
-                op.set_show(True)
-                # Wait for Origin C compilation to finish
-                op.lt_exec("sec -poc 3.5")
-                logger.info("Successfully connected to Origin Pro")
+
+                # Step 4: Verify by running a simple LabTalk command
+                op.lt_exec("type -q MCP Server Connected")
+
+                print("Origin Pro COM connection established successfully.", file=sys.stderr)
+
             except Exception as e:
                 self._op = None
+                self._app = None
                 raise ConnectionError(
                     f"Failed to connect to Origin Pro. "
-                    f"Ensure Origin Pro 2024 is installed and licensed. Error: {e}"
+                    f"Ensure Origin Pro 2024 is installed, licensed, and running. "
+                    f"Error: {e}"
                 ) from e
 
     def disconnect(self) -> None:
@@ -59,6 +79,7 @@ class OriginManager:
                 except Exception:
                     pass
                 self._op = None
+                self._app = None
                 logger.info("Disconnected from Origin Pro")
 
     @property
@@ -85,6 +106,7 @@ class OriginManager:
                 return True
         except Exception:
             self._op = None
+            self._app = None
             try:
                 self.connect()
                 return True

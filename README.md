@@ -13,7 +13,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/<your-username>/origin-pro-mcp.git
+git clone https://github.com/noc228076/origin-pro-mcp.git
 cd origin-pro-mcp
 
 # 使用 uv（推荐）

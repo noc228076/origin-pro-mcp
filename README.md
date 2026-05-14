@@ -30,13 +30,11 @@ uv pip install -e .
   "mcpServers": {
     "origin-pro": {
       "command": "uv",
-      "args": ["--directory", "/path/to/origin-pro-mcp", "run", "origin-pro-mcp"]
+      "args": ["origin-pro-mcp"]
     }
   }
 }
 ```
-
-> 将 `/path/to/origin-pro-mcp` 替换为你实际的项目目录路径。
 
 ## 提供的工具（共 30 个）
 

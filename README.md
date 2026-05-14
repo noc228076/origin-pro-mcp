@@ -7,19 +7,19 @@
 - **Windows 系统**（Origin Pro 仅支持 Windows）
 - **Origin Pro 2024**（已安装并激活许可证）
 - **Python >= 3.10**
-- **uv**（推荐）或 npm
+- **uv**（推荐）或 pip
 
 ## 安装
-
-无需手动安装，MCP 客户端会通过 `uvx` 自动拉取并运行。
-
-如需本地开发：
 
 ```bash
 git clone https://github.com/noc228076/origin-pro-mcp.git
 cd origin-pro-mcp
 uv pip install -e .
 ```
+
+## 启动
+
+双击项目根目录下的 `start.bat` 即可启动 MCP Server。
 
 ## 配置 MCP 客户端
 
@@ -29,28 +29,14 @@ uv pip install -e .
 {
   "mcpServers": {
     "origin-pro": {
-      "command": "uvx",
-      "args": ["origin-pro-mcp"]
+      "command": "uv",
+      "args": ["--directory", "/path/to/origin-pro-mcp", "run", "origin-pro-mcp"]
     }
   }
 }
 ```
 
-如需传递环境变量（例如自定义 Origin 路径）：
-
-```json
-{
-  "mcpServers": {
-    "origin-pro": {
-      "command": "uvx",
-      "args": ["origin-pro-mcp"],
-      "env": {
-        "ORIGIN_PATH": "C:\\Program Files\\OriginLab\\Origin2024"
-      }
-    }
-  }
-}
-```
+> 将 `/path/to/origin-pro-mcp` 替换为你实际的项目目录路径。
 
 ## 提供的工具（共 30 个）
 
@@ -134,7 +120,7 @@ AI Agent (Claude / Cursor / Cherry Studio)
     │  stdio (MCP protocol)
     ▼
 MCP Server (Python, 本服务)
-    │  originpro package → COM automation
+    │  win32com → COM automation
     ▼
 Origin Pro 2024 (GUI 实时可见)
 ```

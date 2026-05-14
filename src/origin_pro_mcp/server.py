@@ -5,7 +5,7 @@ Registers all tools and handles MCP protocol communication via stdio.
 
 import json
 import logging
-import traceback
+import sys
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -16,7 +16,8 @@ from . import tools_graph as gr
 from . import tools_analysis as an
 from . import tools_project as pj
 
-logging.basicConfig(level=logging.INFO)
+# Force all logging to stderr to avoid polluting the stdio MCP channel
+logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 logger = logging.getLogger(__name__)
 
 mcp = FastMCP(

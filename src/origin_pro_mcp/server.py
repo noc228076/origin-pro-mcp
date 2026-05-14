@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 mcp = FastMCP(
     "origin-pro-mcp",
-    description="Origin Pro 2024 MCP Server - AI Agent interface for OriginLab data analysis and visualization",
+    instructions="Origin Pro 2024 MCP Server - AI Agent interface for OriginLab data analysis and visualization",
 )
 
 

@@ -23,29 +23,12 @@ uv pip install -e .
 
 ## 配置 MCP 客户端
 
-### Claude Code
-
-在 MCP 配置文件（`.mcp.json`）中添加：
-
-```json
-{
-  "origin-pro": {
-    "type": "stdio",
-    "command": "uvx",
-    "args": ["origin-pro-mcp"]
-  }
-}
-```
-
-### Cursor
-
-在 `.cursor/mcp.json` 中添加（Cursor 使用 `mcpServers` 包裹格式）：
+在 MCP 配置文件中添加：
 
 ```json
 {
   "mcpServers": {
     "origin-pro": {
-      "type": "stdio",
       "command": "uvx",
       "args": ["origin-pro-mcp"]
     }
@@ -53,23 +36,18 @@ uv pip install -e .
 }
 ```
 
-### Cherry Studio
-
-在 Cherry Studio 设置中添加 MCP 服务器，传输类型选择 **stdio**：
-
-- 命令：`uvx`
-- 参数：`origin-pro-mcp`
-
-### 从源码运行（本地开发）
-
-如果你 clone 了本仓库，也可以指定本地目录：
+如需传递环境变量（例如自定义 Origin 路径）：
 
 ```json
 {
-  "origin-pro": {
-    "type": "stdio",
-    "command": "uv",
-    "args": ["--directory", "/path/to/origin-pro-mcp", "run", "origin-pro-mcp"]
+  "mcpServers": {
+    "origin-pro": {
+      "command": "uvx",
+      "args": ["origin-pro-mcp"],
+      "env": {
+        "ORIGIN_PATH": "C:\\Program Files\\OriginLab\\Origin2024"
+      }
+    }
   }
 }
 ```
